@@ -21,9 +21,9 @@ var broadcast = make(chan Position)
 func main() {
 	app := fiber.New()
 
-app.Get("/", func(c *fiber.Ctx) error {
-    return c.Send("<h1>Server is running</h1>")
-})
+	app.Get("/", func(c *fiber.Ctx) error {
+		return c.SendString("Server is running")
+	})
 
 	// handle WebSocket connections
 	app.Get("/ws", websocket.New(func(c *websocket.Conn) {
