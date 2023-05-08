@@ -2,8 +2,9 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
+	"os"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/websocket/v2"
@@ -19,6 +20,16 @@ var clients = make(map[*websocket.Conn]bool)
 var broadcast = make(chan Position)
 
 func main() {
+	// create log file
+	logFile, err := os.Create("socket.log")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer logFile.Close()
+
+	// create logger instance
+	logger := log.New(logFile, "", log.Ldate|log.Ltime)
+
 	app := fiber.New()
 
 	app.Get("/", func(c *fiber.Ctx) error {
@@ -31,26 +42,25 @@ func main() {
 		clients[c] = true
 		defer delete(clients, c)
 
-		fmt.Println("New client connected:", c.RemoteAddr())
+		logger.Printf("New client connected: %s", c.RemoteAddr())
 
 		// listen for incoming messages from the client
 		for {
 			// read incoming WebSocket messages
 			_, message, err := c.ReadMessage()
 			if err != nil {
-				log.Println(err)
+				logger.Println(err)
 				break
 			}
 
 			// log incoming message
-			log.Printf("Received message from client %s: %s", c.RemoteAddr(), string(message))
+			logger.Printf("Received message from client %s: %s", c.RemoteAddr(), string(message))
 
 			// handle tracking data
 			var pos Position
 			err = json.Unmarshal(message, &pos)
 			if err != nil {
-				fmt.Println("Client error:", err)
-				log.Println(err)
+				logger.Printf("Client error: %s", err)
 				continue
 			}
 
@@ -58,7 +68,7 @@ func main() {
 			broadcast <- pos
 		}
 
-		fmt.Println("Client disconnected:", c.RemoteAddr())
+		logger.Printf("Client disconnected: %s", c.RemoteAddr())
 	}))
 
 	// broadcast tracking data to all connected clients
@@ -67,14 +77,14 @@ func main() {
 			pos := <-broadcast
 			data, err := json.Marshal(pos)
 			if err != nil {
-				log.Println(err)
+				logger.Println(err)
 				continue
 			}
 
 			for client := range clients {
 				err = client.WriteMessage(websocket.TextMessage, data)
 				if err != nil {
-					log.Println(err)
+					logger.Println(err)
 					client.Close()
 					delete(clients, client)
 				}
@@ -83,4 +93,7 @@ func main() {
 	}()
 
 	app.Listen(":3000")
+
+	// wait for server to shut down before closing log file
+	time.Sleep(time.Second)
 }
