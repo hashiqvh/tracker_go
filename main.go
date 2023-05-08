@@ -96,7 +96,7 @@ func main() {
 		}
 	}()
 
-	app.Listen(":8080")
+	app.Listen(":3000")
 
 	// wait for server to shut down before closing log file
 	time.Sleep(time.Second)
