@@ -15,7 +15,7 @@ COPY . .
 RUN go build -o main .
 
 # Expose the port used by the application
-EXPOSE 3000
+EXPOSE 8080
 
 # Start the application
 ENTRYPOINT ["./main"]
