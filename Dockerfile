@@ -18,4 +18,4 @@ RUN go build -o main .
 EXPOSE 3000
 
 # Start the application
-CMD ["./main"]
+ENTRYPOINT ["./main"]
