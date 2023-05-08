@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"time"
@@ -42,25 +43,27 @@ func main() {
 		clients[c] = true
 		defer delete(clients, c)
 
-		logger.Printf("New client connected: %s", c.RemoteAddr())
+		// log the details of the new connection
+		fmt.Printf("New client connected: %s\n", c.RemoteAddr())
 
 		// listen for incoming messages from the client
 		for {
 			// read incoming WebSocket messages
 			_, message, err := c.ReadMessage()
 			if err != nil {
-				logger.Println(err)
+				log.Println(err)
 				break
 			}
 
 			// log incoming message
-			logger.Printf("Received message from client %s: %s", c.RemoteAddr(), string(message))
+			log.Printf("Received message from client %s: %s", c.RemoteAddr(), string(message))
 
 			// handle tracking data
 			var pos Position
 			err = json.Unmarshal(message, &pos)
 			if err != nil {
-				logger.Printf("Client error: %s", err)
+				fmt.Println("Client error:", err)
+				log.Println(err)
 				continue
 			}
 
@@ -68,7 +71,8 @@ func main() {
 			broadcast <- pos
 		}
 
-		logger.Printf("Client disconnected: %s", c.RemoteAddr())
+		// log the details of the disconnection
+		fmt.Printf("Client disconnected: %s\n", c.RemoteAddr())
 	}))
 
 	// broadcast tracking data to all connected clients
